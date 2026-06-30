@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Diablo de Lata — Tarjeta Coleccionable</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100dvh;
+    background: radial-gradient(ellipse at 50% 30%, #2a0a0a 0%, #0a0505 70%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Crimson Pro', serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .hint {
+    color: rgba(212,150,10,0.7);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    margin-bottom: 24px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+  /* Escena 3D */
+  .escena {
+    perspective: 800px;
+    cursor: grab;
+  }
+  .escena:active { cursor: grabbing; }
+
+  .tarjeta {
+    width: 300px;
+    height: 420px;
+    border-radius: 18px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(0deg) rotateY(0deg);
+    transition: transform 0.1s ease;
+    will-change: transform;
+  }
+
+  /* Cara frontal */
+  .cara-frente {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    backface-visibility: hidden;
+    background: linear-gradient(160deg, #1a0d0b 0%, #2d1210 50%, #1a0d0b 100%);
+    border: 2px solid #D4960A;
+    box-shadow:
+      0 0 0 1px rgba(212,150,10,0.2),
+      0 30px 60px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+
+  /* Imagen del personaje */
+  .personaje-img {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+  .personaje-img.placeholder {
+    background: linear-gradient(180deg, #2d1210 0%, #1a0d0b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 260px;
+  }
+
+  /* Degradado fusión */
+  .fade-img {
+    position: absolute;
+    top: 200px;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, #1a0d0b);
+    pointer-events: none;
+  }
+
+  /* Info inferior */
+  .info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 14px 16px 18px;
+    background: linear-gradient(to top, rgba(10,5,5,0.98) 60%, transparent);
+    border-radius: 0 0 18px 18px;
+  }
+  .coleccion-badge {
+    display: inline-block;
+    background: #C0202A;
+    color: #F4E9DC;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .nombre {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.3rem;
+    color: #F4E9DC;
+    line-height: 1.1;
+  }
+  .nombre span { color: #D4960A; }
+  .subtitulo-card {
+    font-size: 0.75rem;
+    color: rgba(244,233,220,0.6);
+    font-style: italic;
+    margin-top: 4px;
+  }
+  .ficha-mini {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .ficha-mini span {
+    font-size: 0.65rem;
+    color: rgba(212,150,10,0.8);
+    letter-spacing: 0.05em;
+  }
+
+  /* Efecto holográfico (brillo que sigue el movimiento) */
+  .holo {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    opacity: 0;
+    background: conic-gradient(
+      from 0deg at var(--mx, 50%) var(--my, 50%),
+      #ff0080, #ff8c00, #ffe100, #00ff9f, #00b4ff, #a855f7, #ff0080
+    );
+    mix-blend-mode: color-dodge;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .tarjeta:hover .holo { opacity: 0.12; }
+  .tarjeta.activa .holo { opacity: 0.18; }
+
+  /* Brillo de borde */
+  .borde-luz {
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: radial-gradient(
+      circle at var(--mx, 50%) var(--my, 50%),
+      rgba(255,255,255,0.08) 0%,
+      transparent 60%
+    );
+    pointer-events: none;
+  }
+
+  /* Botón ver experiencia */
+  .btn-experiencia {
+    margin-top: 24px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #C0202A, #8B0000);
+    color: #F4E9DC;
+    border: none;
+    border-radius: 40px;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    box-shadow: 0 8px 24px rgba(192,32,42,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-experiencia:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(192,32,42,0.6);
+  }
+
+  .firma {
+    margin-top: 16px;
+    font-size: 0.7rem;
+    color: rgba(212,150,10,0.4);
+    letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+
+<p class="hint">✦ INCLINA PARA VER EL EFECTO ✦</p>
+
+<div class="escena" id="escena">
+  <div class="tarjeta" id="tarjeta">
+    <div class="cara-frente">
+      <img class="personaje-img" id="imgPersonaje" src="" alt="" style="display:none;">
+      <div class="personaje-img placeholder" id="placeholder3d">
+        <canvas id="canvas3d" style="width:100%;height:100%;"></canvas>
+      </div>
+      <div class="fade-img"></div>
+      <div class="info">
+        <span class="coleccion-badge" id="badge"></span>
+        <div class="nombre" id="nombre"></div>
+        <div class="subtitulo-card" id="subtitulo"></div>
+        <div class="ficha-mini" id="fichaMini"></div>
+      </div>
+      <div class="holo" id="holo"></div>
+      <div class="borde-luz" id="bordeLuz"></div>
+    </div>
+  </div>
+</div>
+
+<a class="btn-experiencia" id="btnExperiencia" href="#">Ver experiencia completa →</a>
+<p class="firma" id="firma"></p>
+
+<script src="../config.js"></script>
+<script>
+(function () {
+  const cfg = window.FUNKO_CONFIG;
+  const tarjeta = document.getElementById('tarjeta');
+  const holo = document.getElementById('holo');
+  const bordeLuz = document.getElementById('bordeLuz');
+
+  // Llenar datos
+  document.getElementById('badge').textContent = cfg.coleccion;
+  const mitad = Math.ceil(cfg.personaje.length / 2);
+  document.getElementById('nombre').innerHTML =
+    `${cfg.personaje.slice(0,mitad)}<span>${cfg.personaje.slice(mitad)}</span>`;
+  document.getElementById('subtitulo').textContent = cfg.subtitulo;
+  document.getElementById('firma').textContent = cfg.footer;
+  document.getElementById('btnExperiencia').href = '../experience/index.html';
+
+  const fichaMini = document.getElementById('fichaMini');
+  (cfg.ficha || []).slice(0,3).forEach(f => {
+    const s = document.createElement('span');
+    s.textContent = `${f.label}: ${f.valor}`;
+    fichaMini.appendChild(s);
+  });
+
+  // Mini visor 3D dentro de la tarjeta (si hay glb)
+  if (cfg.modo_3d === 'glb' && cfg.modelo_glb) {
+    cargarMiniVisor();
+  } else {
+    // Placeholder con degradado de llamas
+    const ph = document.getElementById('placeholder3d');
+    ph.style.background = `linear-gradient(160deg, ${cfg.colores.fondo} 0%, ${cfg.colores.primario}33 100%)`;
+  }
+
+  function cargarMiniVisor() {
+    const three = document.createElement('script');
+    three.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    three.onload = () => {
+      const gltfScript = document.createElement('script');
+      gltfScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+      gltfScript.onload = () => iniciarMini();
+      document.body.appendChild(gltfScript);
+    };
+    document.body.appendChild(three);
+  }
+
+  function iniciarMini() {
+    const ph = document.getElementById('placeholder3d');
+    const canvas = document.getElementById('canvas3d');
+    canvas.width = 300; canvas.height = 260;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 300/260, 0.1, 1000);
+    camera.position.set(0, 0, 4);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(300, 260);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const luz = new THREE.DirectionalLight(0xffffff, 1.5);
+    luz.position.set(2, 4, 3);
+    scene.add(luz);
+    const luz2 = new THREE.DirectionalLight(0xffe0b0, 0.6);
+    luz2.position.set(-2, 1, -2);
+    scene.add(luz2);
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(`../public/${cfg.modelo_glb}`, (gltf) => {
+      const modelo = gltf.scene;
+      const box = new THREE.Box3().setFromObject(modelo);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const escala = 2.0 / Math.max(size.x, size.y, size.z);
+      modelo.scale.setScalar(escala);
+      modelo.rotation.x = -Math.PI / 2;
+      modelo.position.sub(center.multiplyScalar(escala));
+      modelo.position.y -= size.y * escala * 0.2;
+
+      const mat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(cfg.colores.texto),
+        roughness: 0.6,
+        metalness: 0.05
+      });
+      modelo.traverse(o => { if (o.isMesh) o.material = mat; });
+      scene.add(modelo);
+
+      const reloj = new THREE.Clock();
+      (function animar() {
+        requestAnimationFrame(animar);
+        modelo.rotation.z += 0.003;
+        renderer.render(scene, camera);
+      })();
+    });
+  }
+
+  // Efecto 3D tilt (mouse y touch)
+  function aplicarTilt(x, y, rect) {
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const rx = ((y - cy) / (rect.height / 2)) * -18;
+    const ry = ((x - cx) / (rect.width / 2)) * 18;
+    const pctX = ((x - rect.left) / rect.width * 100).toFixed(1);
+    const pctY = ((y - rect.top) / rect.height * 100).toFixed(1);
+
+    tarjeta.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) scale(1.04)`;
+    holo.style.setProperty('--mx', `${pctX}%`);
+    holo.style.setProperty('--my', `${pctY}%`);
+    bordeLuz.style.setProperty('--mx', `${pctX}%`);
+    bordeLuz.style.setProperty('--my', `${pctY}%`);
+    tarjeta.classList.add('activa');
+  }
+
+  function resetTilt() {
+    tarjeta.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+    tarjeta.classList.remove('activa');
+  }
+
+  const escena = document.getElementById('escena');
+
+  // Mouse
+  escena.addEventListener('mousemove', (e) => {
+    aplicarTilt(e.clientX, e.clientY, escena.getBoundingClientRect());
+  });
+  escena.addEventListener('mouseleave', resetTilt);
+
+  // Touch
+  escena.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    aplicarTilt(t.clientX, t.clientY, escena.getBoundingClientRect());
+  }, { passive: false });
+  escena.addEventListener('touchend', resetTilt);
+
+  // Animación idle suave
+  let idleAngle = 0;
+  let isInteracting = false;
+  escena.addEventListener('mouseenter', () => isInteracting = true);
+  escena.addEventListener('mouseleave', () => isInteracting = false);
+  escena.addEventListener('touchstart', () => isInteracting = true);
+  escena.addEventListener('touchend', () => { isInteracting = false; });
+
+  (function idleLoop() {
+    requestAnimationFrame(idleLoop);
+    if (!isInteracting) {
+      idleAngle += 0.015;
+      const rx = Math.sin(idleAngle * 0.7) * 4;
+      const ry = Math.sin(idleAngle) * 6;
+      tarjeta.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    }
+  })();
+})();
+</script>
+</body>
+</html>
