@@ -338,11 +338,14 @@
 
     <div class="card">
       <h2>Código QR</h2>
-      <div id="qrOutput">
+      <label>Imagen del personaje (para la tarjeta)</label>
+      <input type="file" id="fotoPersonaje" accept="image/*" style="background:#0E0F12;border:1px solid var(--borde);color:var(--texto);padding:8px;border-radius:8px;width:100%;margin-bottom:4px;">
+      <div class="hint">Subí la foto del funko para que aparezca en el QR descargado</div>
+      <div id="qrOutput" style="margin-top:12px;">
         <div class="placeholder" id="qrPlaceholder">Generá el QR para verlo aquí</div>
       </div>
       <div id="qrStatus"></div>
-      <button class="action btn-outline" id="btnDescargarQR" style="display:none;">Descargar QR (PNG)</button>
+      <button class="action btn-outline" id="btnDescargarQR" style="display:none;">Descargar tarjeta QR (PNG)</button>
     </div>
 
     <div class="card">
@@ -520,42 +523,102 @@
     mostrarStatus('ok', 'QR generado correctamente.');
   });
 
-  // --- Descargar QR con branding ---
+  // --- Descargar tarjeta QR con foto del personaje ---
   document.getElementById('btnDescargarQR').addEventListener('click', () => {
     const qrCanvas = document.querySelector('#qrCanvasWrap canvas');
-    if (!qrCanvas) {
-      mostrarStatus('err', 'Generá el QR primero.');
-      return;
-    }
+    if (!qrCanvas) { mostrarStatus('err', 'Generá el QR primero.'); return; }
     const cfg = recogerConfig();
+    const archivoFoto = document.getElementById('fotoPersonaje').files[0];
 
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = 280;
-    finalCanvas.height = 320;
-    const ctx = finalCanvas.getContext('2d');
+    function dibujarTarjeta(fotoImg) {
+      // Tarjeta: 400 x 600 — foto arriba, QR abajo a la derecha
+      const W = 400, H = 600;
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const ctx = c.getContext('2d');
 
-    ctx.fillStyle = '#FBF6EC';
-    ctx.fillRect(0, 0, 280, 320);
+      // Fondo oscuro degradado
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, '#1a0d0b');
+      grad.addColorStop(1, '#0a0605');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
 
-    ctx.drawImage(qrCanvas, 40, 30, 200, 200);
+      // Borde dorado
+      ctx.strokeStyle = '#D4960A';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(8, 8, W - 16, H - 16);
 
-    ctx.fillStyle = '#120D0B';
-    ctx.font = 'bold 16px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(cfg.personaje, 140, 252);
+      // Foto del personaje (parte superior)
+      if (fotoImg) {
+        const fotoH = 320;
+        ctx.drawImage(fotoImg, 0, 0, W, fotoH);
+        // Degradado para fusionar foto con fondo
+        const fadeGrad = ctx.createLinearGradient(0, fotoH - 80, 0, fotoH);
+        fadeGrad.addColorStop(0, 'rgba(26,13,11,0)');
+        fadeGrad.addColorStop(1, 'rgba(26,13,11,1)');
+        ctx.fillStyle = fadeGrad;
+        ctx.fillRect(0, fotoH - 80, W, 80);
+      }
 
-    ctx.font = '12px Inter, sans-serif';
-    ctx.fillStyle = '#555';
-    ctx.fillText(cfg.marca, 140, 270);
+      // Nombre del personaje
+      ctx.fillStyle = '#F4E9DC';
+      ctx.font = 'bold 26px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(cfg.personaje.toUpperCase(), W / 2, 360);
 
-    ctx.font = 'bold 12px Inter, sans-serif';
-    ctx.fillStyle = '#C0202A';
-    ctx.fillText('✦ Escanea para ver en 3D ✦', 140, 296);
+      // Marca en dorado
+      ctx.fillStyle = '#D4960A';
+      ctx.font = '13px Georgia, serif';
+      ctx.fillText(cfg.marca, W / 2, 382);
 
-    const a = document.createElement('a');
-    a.href = finalCanvas.toDataURL('image/png');
-    a.download = `qr-${slug(cfg.personaje)}.png`;
-    a.click();
+      // Línea separadora
+      ctx.strokeStyle = '#D4960A';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(40, 396); ctx.lineTo(W - 40, 396);
+      ctx.stroke();
+
+      // QR (esquina inferior derecha)
+      const qrSize = 130;
+      const qrX = W - qrSize - 20;
+      const qrY = 408;
+      ctx.fillStyle = '#fff';
+      ctx.roundRect ? ctx.roundRect(qrX - 6, qrY - 6, qrSize + 12, qrSize + 12, 8) : ctx.fillRect(qrX - 6, qrY - 6, qrSize + 12, qrSize + 12);
+      ctx.fill();
+      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+      // Texto izquierda del QR
+      ctx.fillStyle = '#F4E9DC';
+      ctx.font = 'bold 13px Georgia, serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Escanea y', 20, 440);
+      ctx.fillText('ve en 3D', 20, 458);
+
+      ctx.fillStyle = '#C0202A';
+      ctx.font = '11px Georgia, serif';
+      ctx.fillText('✦ Experiencia', 20, 478);
+      ctx.fillText('  Interactiva ✦', 20, 494);
+
+      // Footer
+      ctx.fillStyle = '#9AA0AC';
+      ctx.font = '10px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(cfg.coleccion, W / 2, 578);
+
+      const a = document.createElement('a');
+      a.href = c.toDataURL('image/png');
+      a.download = `tarjeta-qr-${slug(cfg.personaje)}.png`;
+      a.click();
+    }
+
+    if (archivoFoto) {
+      const img = new Image();
+      img.onload = () => dibujarTarjeta(img);
+      img.src = URL.createObjectURL(archivoFoto);
+    } else {
+      dibujarTarjeta(null);
+    }
   });
 
   // --- Clientes guardados (localStorage) ---
