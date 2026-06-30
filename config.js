@@ -12,9 +12,9 @@ window.FUNKO_CONFIG = {
     brasa: "#FF6A1A"
   },
 
-  modo_3d: "sketchfab",
+  modo_3d: "glb",
   sketchfab_id: "d2bd8fe368a245699fc7cd350de7589d",
-  modelo_glb: null,
+  modelo_glb: "diablo-de-lata.glb",
 
   audio_url: null,
   audio_local: null,

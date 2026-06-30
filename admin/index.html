@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel de Administración — Figuras 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --oro: #D4960A;
+    --rojo: #C0202A;
+    --bg: #0E0F12;
+    --panel: #16181D;
+    --borde: #262932;
+    --texto: #E7E9EE;
+    --texto-sec: #9AA0AC;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--texto);
+    font-family: 'Inter', sans-serif;
+    padding: 32px;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .subt { color: var(--texto-sec); font-size: 0.9rem; margin-bottom: 28px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 880px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    color: var(--oro);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--texto-sec);
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], input[type="url"], textarea {
+    width: 100%;
+    background: #0E0F12;
+    border: 1px solid var(--borde);
+    color: var(--texto);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--oro); }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .hint { font-size: 0.72rem; color: var(--texto-sec); margin-top: 4px; }
+
+  .color-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+  .color-item { text-align: center; }
+  .color-item label { margin: 0 0 6px; }
+  input[type="color"] {
+    width: 100%;
+    height: 36px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 8px;
+    background: #0E0F12;
+    border: 1px solid var(--borde);
+    color: var(--texto-sec);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+  }
+  .tab-btn.active {
+    background: rgba(212,150,10,0.12);
+    border-color: var(--oro);
+    color: var(--oro);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .capitulo-box {
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+  }
+  .capitulo-box .num-label {
+    font-size: 0.75rem;
+    color: var(--rojo);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  button.action {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .btn-oro { background: var(--oro); color: #1a1300; }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--borde);
+    color: var(--texto);
+  }
+  .btn-outline:hover { border-color: var(--oro); color: var(--oro); }
+
+  #qrStatus {
+    font-size: 0.82rem;
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    display: none;
+  }
+  #qrStatus.ok { display: block; background: rgba(46,160,67,0.12); color: #4ADE80; }
+  #qrStatus.err { display: block; background: rgba(192,32,42,0.12); color: #F87171; }
+
+  #qrOutput {
+    background: #0E0F12;
+    border: 1px dashed var(--borde);
+    border-radius: 10px;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+  }
+  #qrOutput .placeholder { color: var(--texto-sec); font-size: 0.85rem; }
+  #qrCanvasWrap { background: #fff; padding: 10px; border-radius: 8px; }
+  #qrUrlText { font-size: 0.78rem; color: var(--texto-sec); word-break: break-all; text-align: center; max-width: 220px; }
+
+  .cliente-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+  .cliente-item .info { overflow: hidden; }
+  .cliente-item .nombre { font-weight: 600; }
+  .cliente-item .meta { color: var(--texto-sec); font-size: 0.75rem; }
+  .cliente-item .acciones { display: flex; gap: 6px; flex-shrink: 0; }
+  .cliente-item button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .btn-cargar { background: rgba(212,150,10,0.15); color: var(--oro); }
+  .btn-eliminar { background: rgba(192,32,42,0.15); color: #F87171; }
+
+  ol.instrucciones {
+    padding-left: 18px;
+    font-size: 0.85rem;
+    color: var(--texto-sec);
+    line-height: 1.8;
+  }
+  ol.instrucciones li { margin-bottom: 4px; }
+  ol.instrucciones b { color: var(--texto); }
+</style>
+</head>
+<body>
+
+<h1>Panel de Administración</h1>
+<p class="subt">Configura la experiencia 3D y genera el QR para el cliente</p>
+
+<div class="grid">
+
+  <!-- COLUMNA IZQUIERDA -->
+  <div>
+    <div class="card">
+      <h2>Datos del Cliente</h2>
+      <label for="marca">Marca</label>
+      <input type="text" id="marca" value="Pase del Niño Rey de Reyes">
+      <label for="personaje">Personaje</label>
+      <input type="text" id="personaje" value="Diablo de Lata">
+      <label for="subtitulo">Subtítulo</label>
+      <input type="text" id="subtitulo" value="Guardián travieso del Pase del Niño de Riobamba">
+      <label for="coleccion">Colección</label>
+      <input type="text" id="coleccion" value="Personajes Tradicionales de Riobamba">
+    </div>
+
+    <div class="card">
+      <h2>Identidad de Color</h2>
+      <div class="color-row">
+        <div class="color-item">
+          <label>Primario</label>
+          <input type="color" id="colorPrimario" value="#C0202A">
+        </div>
+        <div class="color-item">
+          <label>Acento</label>
+          <input type="color" id="colorAcento" value="#D4960A">
+        </div>
+        <div class="color-item">
+          <label>Fondo</label>
+          <input type="color" id="colorFondo" value="#120D0B">
+        </div>
+        <div class="color-item">
+          <label>Texto</label>
+          <input type="color" id="colorTexto" value="#F4E9DC">
+        </div>
+        <div class="color-item">
+          <label>Brasa</label>
+          <input type="color" id="colorBrasa" value="#FF6A1A">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Modelo 3D</h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="sketchfab">Sketchfab</button>
+        <button class="tab-btn" data-tab="glb">Archivo .glb</button>
+      </div>
+      <div class="tab-panel active" id="tab-sketchfab">
+        <label for="sketchfabId">ID de Sketchfab</label>
+        <input type="text" id="sketchfabId" value="d2bd8fe368a245699fc7cd350de7589d">
+        <div class="hint">Lo encontrás en la URL: sketchfab.com/models/<b>ESTE-ID</b>/embed</div>
+      </div>
+      <div class="tab-panel" id="tab-glb">
+        <label for="modeloGlb">Nombre del archivo .glb</label>
+        <input type="text" id="modeloGlb" placeholder="diablo-de-lata.glb">
+        <div class="hint">El archivo debe estar subido en la carpeta /public/</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Música</h2>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="audioUrl">URL directa</button>
+        <button class="tab-btn" data-tab="audioLocal">Archivo local</button>
+      </div>
+      <div class="tab-panel active" id="tab-audioUrl">
+        <label for="audioUrl">URL del audio</label>
+        <input type="url" id="audioUrl" placeholder="https://...">
+      </div>
+      <div class="tab-panel" id="tab-audioLocal">
+        <label for="audioLocal">Nombre del archivo</label>
+        <input type="text" id="audioLocal" placeholder="banda-de-pueblo.mp3">
+        <div class="hint">El archivo debe estar subido en /public/audio/</div>
+      </div>
+      <label for="audioNombre">Nombre visible de la canción</label>
+      <input type="text" id="audioNombre" value="Banda de Pueblo - Riobamba">
+    </div>
+
+    <div class="card">
+      <h2>Historia</h2>
+      <div class="capitulo-box">
+        <div class="num-label">Capítulo I</div>
+        <label>Título</label>
+        <input type="text" id="hist1Titulo" value="El Origen">
+        <label>Texto</label>
+        <textarea id="hist1Texto">El Diablo de Lata nace de la tradición mestiza de Riobamba, una figura que combina el humor popular con la sátira a las autoridades coloniales. Su disfraz de hojalata reciclada lo convierte en un símbolo único de ingenio y resistencia cultural.</textarea>
+      </div>
+      <div class="capitulo-box">
+        <div class="num-label">Capítulo II</div>
+        <label>Título</label>
+        <input type="text" id="hist2Titulo" value="El Disfraz">
+        <label>Texto</label>
+        <textarea id="hist2Texto">Confeccionado completamente con latas de aceite y conservas recicladas, su máscara cornuda y su traje brillante hacen ruido al caminar, anunciando su llegada entre la multitud con un característico repiqueteo metálico.</textarea>
+      </div>
+      <div class="capitulo-box">
+        <div class="num-label">Capítulo III</div>
+        <label>Título</label>
+        <input type="text" id="hist3Titulo" value="El Pase del Niño">
+        <label>Texto</label>
+        <textarea id="hist3Texto">Cada 24 de diciembre, el Diablo de Lata desfila por las calles de Riobamba en el Pase del Niño Rey de Reyes, una de las fiestas religiosas y culturales más grandes del Ecuador, bailando y haciendo travesuras entre los espectadores.</textarea>
+      </div>
+      <div class="capitulo-box">
+        <div class="num-label">Capítulo IV</div>
+        <label>Título</label>
+        <input type="text" id="hist4Titulo" value="Legado Vivo">
+        <label>Texto</label>
+        <textarea id="hist4Texto">Hoy el Diablo de Lata sigue siendo transmitido de generación en generación, manteniendo viva una tradición que mezcla fe, sátira y arte popular en el corazón de la Sierra ecuatoriana.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLUMNA DERECHA -->
+  <div>
+    <div class="card">
+      <h2>URL del Despliegue</h2>
+      <label for="deployUrl">URL de Vercel</label>
+      <input type="url" id="deployUrl" placeholder="https://tu-proyecto.vercel.app">
+      <div id="urlStatus" class="hint"></div>
+
+      <button class="action btn-oro" id="btnGenerarConfig">⚙ Generar config.js</button>
+      <button class="action btn-outline" id="btnGenerarQR">▣ Generar código QR</button>
+    </div>
+
+    <div class="card">
+      <h2>Código QR</h2>
+      <div id="qrOutput">
+        <div class="placeholder" id="qrPlaceholder">Generá el QR para verlo aquí</div>
+      </div>
+      <div id="qrStatus"></div>
+      <button class="action btn-outline" id="btnDescargarQR" style="display:none;">Descargar QR (PNG)</button>
+    </div>
+
+    <div class="card">
+      <h2>Clientes Guardados</h2>
+      <div id="listaClientes"></div>
+      <button class="action btn-outline" id="btnGuardarCliente">+ Guardar cliente actual</button>
+    </div>
+
+    <div class="card">
+      <h2>Deploy en Vercel</h2>
+      <ol class="instrucciones">
+        <li><b>1.</b> Generá el <b>config.js</b> con el botón de arriba</li>
+        <li><b>2.</b> Reemplazá el archivo <b>config.js</b> en la raíz del proyecto</li>
+        <li><b>3.</b> Subí cualquier archivo .glb o de audio a sus carpetas en /public/</li>
+        <li><b>4.</b> Ejecutá <b>vercel</b> o conectá el repo desde el dashboard de Vercel</li>
+        <li><b>5.</b> Copiá la URL del despliegue y pegala arriba</li>
+        <li><b>6.</b> Generá el QR y descargalo para el cliente</li>
+      </ol>
+    </div>
+  </div>
+
+</div>
+
+<canvas id="qrcodeCanvas" style="display:none;"></canvas>
+
+<script>
+(function () {
+  // --- Tabs ---
+  document.querySelectorAll('.card').forEach(card => {
+    const tabs = card.querySelectorAll('.tab-btn');
+    if (!tabs.length) return;
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabs.forEach(b => b.classList.remove('active'));
+        card.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        card.querySelector(`#tab-${btn.dataset.tab}`).classList.add('active');
+      });
+    });
+  });
+
+  function slug(str) {
+    return (str || 'figura')
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  function recogerConfig() {
+    const modo3dActivo = document.querySelector('#tab-sketchfab').classList.contains('active') ? 'sketchfab' : 'glb';
+    const audioActivo = document.querySelector('#tab-audioUrl').classList.contains('active') ? 'url' : 'local';
+
+    return {
+      marca: document.getElementById('marca').value,
+      personaje: document.getElementById('personaje').value,
+      subtitulo: document.getElementById('subtitulo').value,
+      coleccion: document.getElementById('coleccion').value,
+      colores: {
+        primario: document.getElementById('colorPrimario').value,
+        acento: document.getElementById('colorAcento').value,
+        fondo: document.getElementById('colorFondo').value,
+        texto: document.getElementById('colorTexto').value,
+        brasa: document.getElementById('colorBrasa').value
+      },
+      modo_3d: modo3dActivo,
+      sketchfab_id: modo3dActivo === 'sketchfab' ? (document.getElementById('sketchfabId').value || null) : null,
+      modelo_glb: modo3dActivo === 'glb' ? (document.getElementById('modeloGlb').value || null) : null,
+      audio_url: audioActivo === 'url' ? (document.getElementById('audioUrl').value || null) : null,
+      audio_local: audioActivo === 'local' ? (document.getElementById('audioLocal').value || null) : null,
+      audio_nombre: document.getElementById('audioNombre').value,
+      historia: [
+        { num: 'I', titulo: document.getElementById('hist1Titulo').value, texto: document.getElementById('hist1Texto').value },
+        { num: 'II', titulo: document.getElementById('hist2Titulo').value, texto: document.getElementById('hist2Texto').value },
+        { num: 'III', titulo: document.getElementById('hist3Titulo').value, texto: document.getElementById('hist3Texto').value },
+        { num: 'IV', titulo: document.getElementById('hist4Titulo').value, texto: document.getElementById('hist4Texto').value }
+      ],
+      ficha: [
+        { label: 'Origen', valor: 'Riobamba, Ecuador' },
+        { label: 'Material', valor: 'Hojalata reciclada' },
+        { label: 'Festividad', valor: 'Pase del Niño Rey de Reyes' },
+        { label: 'Fecha', valor: '24 de diciembre' },
+        { label: 'Categoría', valor: 'Personaje Tradicional' },
+        { label: 'Región', valor: 'Sierra Centro' }
+      ],
+      footer: `© ${document.getElementById('marca').value} — Tradición Cultural Ecuatoriana`
+    };
+  }
+
+  function aplicarConfig(cfg) {
+    document.getElementById('marca').value = cfg.marca || '';
+    document.getElementById('personaje').value = cfg.personaje || '';
+    document.getElementById('subtitulo').value = cfg.subtitulo || '';
+    document.getElementById('coleccion').value = cfg.coleccion || '';
+    if (cfg.colores) {
+      document.getElementById('colorPrimario').value = cfg.colores.primario || '#C0202A';
+      document.getElementById('colorAcento').value = cfg.colores.acento || '#D4960A';
+      document.getElementById('colorFondo').value = cfg.colores.fondo || '#120D0B';
+      document.getElementById('colorTexto').value = cfg.colores.texto || '#F4E9DC';
+      document.getElementById('colorBrasa').value = cfg.colores.brasa || '#FF6A1A';
+    }
+    const esGlb = cfg.modo_3d === 'glb';
+    document.querySelector('[data-tab="sketchfab"]').click();
+    if (esGlb) document.querySelector('[data-tab="glb"]').click();
+    document.getElementById('sketchfabId').value = cfg.sketchfab_id || '';
+    document.getElementById('modeloGlb').value = cfg.modelo_glb || '';
+
+    const esLocal = !!cfg.audio_local;
+    document.querySelector('[data-tab="audioUrl"]').click();
+    if (esLocal) document.querySelector('[data-tab="audioLocal"]').click();
+    document.getElementById('audioUrl').value = cfg.audio_url || '';
+    document.getElementById('audioLocal').value = cfg.audio_local || '';
+    document.getElementById('audioNombre').value = cfg.audio_nombre || '';
+
+    const hist = cfg.historia || [];
+    [1,2,3,4].forEach((n, i) => {
+      const cap = hist[i] || {};
+      document.getElementById(`hist${n}Titulo`).value = cap.titulo || '';
+      document.getElementById(`hist${n}Texto`).value = cap.texto || '';
+    });
+  }
+
+  function mostrarStatus(tipo, msg) {
+    const el = document.getElementById('qrStatus');
+    el.className = tipo === 'ok' ? 'ok' : 'err';
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  // --- Generar config.js ---
+  document.getElementById('btnGenerarConfig').addEventListener('click', () => {
+    const cfg = recogerConfig();
+    const contenido = `window.FUNKO_CONFIG = ${JSON.stringify(cfg, null, 2)};\n`;
+    const blob = new Blob([contenido], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `config-${slug(cfg.personaje)}.js`;
+    a.click();
+    URL.revokeObjectURL(url);
+    mostrarStatus('ok', 'config.js generado y descargado.');
+  });
+
+  // --- Generar QR ---
+  let qrInstancia = null;
+  document.getElementById('btnGenerarQR').addEventListener('click', () => {
+    const url = document.getElementById('deployUrl').value.trim();
+    if (!url) {
+      mostrarStatus('err', 'Ingresá primero la URL del despliegue de Vercel.');
+      return;
+    }
+
+    const output = document.getElementById('qrOutput');
+    output.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.id = 'qrCanvasWrap';
+    output.appendChild(wrap);
+
+    qrInstancia = new QRCode(wrap, {
+      text: url,
+      width: 200,
+      height: 200,
+      colorDark: '#120D0B',
+      colorLight: '#F4E9DC',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    const urlText = document.createElement('div');
+    urlText.id = 'qrUrlText';
+    urlText.textContent = url;
+    output.appendChild(urlText);
+
+    document.getElementById('btnDescargarQR').style.display = 'block';
+    mostrarStatus('ok', 'QR generado correctamente.');
+  });
+
+  // --- Descargar QR con branding ---
+  document.getElementById('btnDescargarQR').addEventListener('click', () => {
+    const qrCanvas = document.querySelector('#qrCanvasWrap canvas');
+    if (!qrCanvas) {
+      mostrarStatus('err', 'Generá el QR primero.');
+      return;
+    }
+    const cfg = recogerConfig();
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = 280;
+    finalCanvas.height = 320;
+    const ctx = finalCanvas.getContext('2d');
+
+    ctx.fillStyle = '#FBF6EC';
+    ctx.fillRect(0, 0, 280, 320);
+
+    ctx.drawImage(qrCanvas, 40, 30, 200, 200);
+
+    ctx.fillStyle = '#120D0B';
+    ctx.font = 'bold 16px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(cfg.personaje, 140, 252);
+
+    ctx.font = '12px Inter, sans-serif';
+    ctx.fillStyle = '#555';
+    ctx.fillText(cfg.marca, 140, 270);
+
+    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.fillStyle = '#C0202A';
+    ctx.fillText('✦ Escanea para ver en 3D ✦', 140, 296);
+
+    const a = document.createElement('a');
+    a.href = finalCanvas.toDataURL('image/png');
+    a.download = `qr-${slug(cfg.personaje)}.png`;
+    a.click();
+  });
+
+  // --- Clientes guardados (localStorage) ---
+  const KEY = 'funko-clientes';
+
+  function obtenerClientes() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch (e) { return []; }
+  }
+
+  function guardarClientes(lista) {
+    localStorage.setItem(KEY, JSON.stringify(lista));
+  }
+
+  function renderClientes() {
+    const lista = obtenerClientes();
+    const cont = document.getElementById('listaClientes');
+    cont.innerHTML = '';
+    if (!lista.length) {
+      cont.innerHTML = '<div class="hint">Todavía no guardaste ningún cliente.</div>';
+      return;
+    }
+    lista.forEach((c, i) => {
+      const div = document.createElement('div');
+      div.className = 'cliente-item';
+      div.innerHTML = `
+        <div class="info">
+          <div class="nombre">${c.nombre}</div>
+          <div class="meta">${c.marca} · ${c.fecha}</div>
+        </div>
+        <div class="acciones">
+          <button class="btn-cargar" data-i="${i}">Cargar</button>
+          <button class="btn-eliminar" data-i="${i}">✕</button>
+        </div>
+      `;
+      cont.appendChild(div);
+    });
+
+    cont.querySelectorAll('.btn-cargar').forEach(btn => {
+      btn.addEventListener('click', () => cargarCliente(Number(btn.dataset.i)));
+    });
+    cont.querySelectorAll('.btn-eliminar').forEach(btn => {
+      btn.addEventListener('click', () => eliminarCliente(Number(btn.dataset.i)));
+    });
+  }
+
+  function cargarCliente(i) {
+    const lista = obtenerClientes();
+    const c = lista[i];
+    if (!c) return;
+    aplicarConfig(c.cfg);
+    document.getElementById('deployUrl').value = c.url || '';
+    mostrarStatus('ok', `Cliente "${c.nombre}" cargado.`);
+  }
+
+  function eliminarCliente(i) {
+    const lista = obtenerClientes();
+    lista.splice(i, 1);
+    guardarClientes(lista);
+    renderClientes();
+  }
+
+  document.getElementById('btnGuardarCliente').addEventListener('click', () => {
+    const cfg = recogerConfig();
+    const lista = obtenerClientes();
+    lista.push({
+      nombre: cfg.personaje || 'Sin nombre',
+      marca: cfg.marca || '',
+      url: document.getElementById('deployUrl').value.trim(),
+      cfg: cfg,
+      fecha: new Date().toLocaleDateString('es-EC')
+    });
+    guardarClientes(lista);
+    renderClientes();
+    mostrarStatus('ok', 'Cliente guardado correctamente.');
+  });
+
+  renderClientes();
+})();
+</script>
+</body>
+</html>
