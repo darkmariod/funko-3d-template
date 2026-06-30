@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Experiencia 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primario: #C0202A;
+    --color-acento: #D4960A;
+    --color-fondo: #120D0B;
+    --color-texto: #F4E9DC;
+    --color-brasa: #FF6A1A;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--color-fondo);
+    color: var(--color-texto);
+    font-family: 'Crimson Pro', serif;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, .eyebrow {
+    font-family: 'Cinzel Decorative', serif;
+  }
+
+  /* Loading screen */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: var(--color-fondo);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity .6s ease;
+  }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 56px;
+    height: 56px;
+    border: 3px solid rgba(244,233,220,0.15);
+    border-top-color: var(--color-acento);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Fondo de llamas */
+  #llamas {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 180px;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .llama {
+    position: absolute;
+    bottom: -40px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    filter: blur(6px);
+    opacity: 0.55;
+    animation: subir ease-in-out infinite;
+  }
+  @keyframes subir {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 0.45; }
+    50% { transform: translateY(-30px) scale(1.15); opacity: 0.7; }
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Reproductor flotante */
+  #player {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 500;
+    background: rgba(18,13,11,0.9);
+    border: 1px solid rgba(212,150,10,0.35);
+    backdrop-filter: blur(8px);
+    border-radius: 50px;
+    padding: 10px 18px 10px 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  #playBtn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-primario);
+    color: var(--color-texto);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  #songName {
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    max-width: 110px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 18px;
+  }
+  .bars span {
+    width: 3px;
+    background: var(--color-acento);
+    border-radius: 2px;
+    animation: bar 0.9s ease-in-out infinite;
+  }
+  .bars.paused span { animation-play-state: paused; height: 4px !important; }
+  .bars span:nth-child(1) { animation-delay: 0s; }
+  .bars span:nth-child(2) { animation-delay: 0.15s; }
+  .bars span:nth-child(3) { animation-delay: 0.3s; }
+  .bars span:nth-child(4) { animation-delay: 0.45s; }
+  @keyframes bar {
+    0%, 100% { height: 4px; }
+    50% { height: 18px; }
+  }
+
+  /* Hero */
+  .hero {
+    min-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .emblema { width: 90px; height: 90px; margin-bottom: 18px; }
+  .eyebrow {
+    color: var(--color-acento);
+    font-size: 0.85rem;
+    letter-spacing: 0.25em;
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 7vw, 4rem);
+    line-height: 1.1;
+    font-weight: 700;
+  }
+  .hero h1 .resaltado { color: var(--color-acento); }
+  .hero .subtitulo {
+    margin-top: 18px;
+    font-size: 1.1rem;
+    font-style: italic;
+    color: rgba(244,233,220,0.8);
+    max-width: 480px;
+  }
+
+  /* Sección 3D */
+  .seccion-3d {
+    padding: 20px 20px 60px;
+    display: flex;
+    justify-content: center;
+  }
+  .visor-3d {
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 4/3;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(212,150,10,0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    background: #000;
+  }
+  .visor-3d iframe, .visor-3d canvas { width: 100%; height: 100%; display: block; }
+
+  /* Historia */
+  .historia {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+  .capitulo {
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid rgba(244,233,220,0.1);
+  }
+  .capitulo:last-child { border-bottom: none; }
+  .capitulo .num {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--color-acento);
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .capitulo h2 {
+    font-size: 1.6rem;
+    margin-bottom: 14px;
+    color: var(--color-texto);
+  }
+  .capitulo p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: rgba(244,233,220,0.85);
+  }
+
+  /* Ficha */
+  .ficha-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 24px 80px;
+  }
+  .ficha-card {
+    position: relative;
+    background: rgba(244,233,220,0.04);
+    border: 1px solid rgba(212,150,10,0.25);
+    border-radius: 16px;
+    padding: 32px 24px;
+  }
+  .badge {
+    position: absolute;
+    top: -14px;
+    left: 24px;
+    background: var(--color-primario);
+    color: var(--color-texto);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    padding: 6px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .ficha-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 10px;
+  }
+  .ficha-item .label {
+    font-size: 0.75rem;
+    color: var(--color-acento);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .ficha-item .valor { font-size: 1rem; }
+
+  footer {
+    text-align: center;
+    padding: 30px 20px 50px;
+    font-size: 0.8rem;
+    color: rgba(244,233,220,0.5);
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 480px) {
+    .ficha-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div></div>
+<div id="llamas"></div>
+
+<main>
+
+  <!-- Reproductor flotante -->
+  <div id="player">
+    <button id="playBtn">▶</button>
+    <div>
+      <div id="songName">Cargando...</div>
+      <div class="bars paused" id="bars">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+  <audio id="audio" loop></audio>
+
+  <!-- Hero -->
+  <section class="hero">
+    <svg class="emblema" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 10 L50 55 M30 25 Q30 5 50 10 Q70 5 70 25 M35 55 L65 55 L60 75 Q50 85 40 75 Z" stroke="var(--color-acento)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="50" cy="55" r="3" fill="var(--color-primario)"/>
+    </svg>
+    <span class="eyebrow" id="marca"></span>
+    <h1 id="titulo"></h1>
+    <p class="subtitulo" id="subtitulo"></p>
+  </section>
+
+  <!-- Modelo 3D -->
+  <section class="seccion-3d">
+    <div class="visor-3d" id="visor3d"></div>
+  </section>
+
+  <!-- Historia -->
+  <section class="historia" id="historia"></section>
+
+  <!-- Ficha -->
+  <section class="ficha-wrap">
+    <div class="ficha-card">
+      <span class="badge" id="ficha-badge">Colección</span>
+      <div class="ficha-grid" id="ficha-grid"></div>
+    </div>
+  </section>
+
+  <footer id="footer"></footer>
+
+</main>
+
+<script src="../config.js"></script>
+<script>
+(function () {
+  const cfg = window.FUNKO_CONFIG;
+  const root = document.documentElement;
+
+  // Aplicar paleta como CSS variables
+  Object.entries(cfg.colores).forEach(([key, val]) => {
+    root.style.setProperty(`--color-${key}`, val);
+  });
+
+  // Textos principales
+  document.title = `${cfg.personaje} — ${cfg.marca}`;
+  document.getElementById('marca').textContent = cfg.marca;
+  document.getElementById('subtitulo').textContent = cfg.subtitulo;
+  document.getElementById('footer').textContent = cfg.footer;
+  document.getElementById('ficha-badge').textContent = cfg.coleccion;
+
+  const personaje = cfg.personaje || '';
+  const mitad = Math.ceil(personaje.length / 2);
+  document.getElementById('titulo').innerHTML =
+    `${personaje.slice(0, mitad)}<span class="resaltado">${personaje.slice(mitad)}</span>`;
+
+  // Historia
+  const historiaEl = document.getElementById('historia');
+  (cfg.historia || []).forEach(cap => {
+    const div = document.createElement('div');
+    div.className = 'capitulo';
+    div.innerHTML = `
+      <span class="num">${cap.num}</span>
+      <h2>${cap.titulo}</h2>
+      <p>${cap.texto}</p>
+    `;
+    historiaEl.appendChild(div);
+  });
+
+  // Ficha
+  const fichaGrid = document.getElementById('ficha-grid');
+  (cfg.ficha || []).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'ficha-item';
+    div.innerHTML = `<div class="label">${item.label}</div><div class="valor">${item.valor}</div>`;
+    fichaGrid.appendChild(div);
+  });
+
+  // Modelo 3D
+  const visor = document.getElementById('visor3d');
+  if (cfg.modo_3d === 'sketchfab' && cfg.sketchfab_id) {
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://sketchfab.com/models/${cfg.sketchfab_id}/embed?autostart=1&ui_theme=dark`;
+    iframe.setAttribute('allow', 'autoplay; fullscreen; xr-spatial-tracking');
+    iframe.setAttribute('allowfullscreen', '');
+    visor.appendChild(iframe);
+  } else if (cfg.modo_3d === 'glb' && cfg.modelo_glb) {
+    cargarGLB(`../public/${cfg.modelo_glb}`);
+  }
+
+  function cargarGLB(url) {
+    const threeScript = document.createElement('script');
+    threeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    threeScript.onload = () => {
+      const loaderScript = document.createElement('script');
+      loaderScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+      loaderScript.onload = () => {
+        const controlsScript = document.createElement('script');
+        controlsScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+        controlsScript.onload = () => iniciarThree(url);
+        document.body.appendChild(controlsScript);
+      };
+      document.body.appendChild(loaderScript);
+    };
+    document.body.appendChild(threeScript);
+  }
+
+  function iniciarThree(url) {
+    const ancho = visor.clientWidth;
+    const alto = visor.clientHeight;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, ancho / alto, 0.1, 1000);
+    camera.position.set(0, 0, 4);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(ancho, alto);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    visor.appendChild(renderer.domElement);
+
+    // Iluminación tipo estudio para resaltar el modelo sin texturas
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const luz1 = new THREE.DirectionalLight(0xffffff, 1.8);
+    luz1.position.set(3, 5, 3);
+    scene.add(luz1);
+    const luz2 = new THREE.DirectionalLight(0xffe0b0, 0.8);
+    luz2.position.set(-3, 2, -2);
+    scene.add(luz2);
+    const luzFrontal = new THREE.DirectionalLight(0xffffff, 0.5);
+    luzFrontal.position.set(0, 0, 5);
+    scene.add(luzFrontal);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.6;
+
+    // Animación esquelética (igual al patrón de
+    // three.js webgl_animation_skinning_blending: AnimationMixer + crossFadeTo + pesos por acción)
+    let mixer = null;
+    let acciones = [];
+    let accionActiva = null;
+    const reloj = new THREE.Clock();
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(url, (gltf) => {
+      const modelo = gltf.scene;
+
+      // Centrar y escalar el modelo automáticamente según su bounding box
+      const box = new THREE.Box3().setFromObject(modelo);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const escala = 2.5 / maxDim;
+      const escalaFinal = 2.0 / maxDim;
+      modelo.scale.setScalar(escalaFinal);
+      modelo.rotation.x = -Math.PI / 2;
+      modelo.rotation.z = 0;
+      modelo.position.sub(center.multiplyScalar(escalaFinal));
+      modelo.position.y -= size.y * escalaFinal * 0.2;
+
+      // Material blanco limpio estilo figura sin pintar
+      const matBlanco = new THREE.MeshStandardMaterial({
+        color: 0xf0ece4,
+        roughness: 0.6,
+        metalness: 0.05
+      });
+      modelo.traverse((obj) => {
+        if (obj.isMesh) obj.material = matBlanco;
+      });
+
+      scene.add(modelo);
+
+      if (gltf.animations && gltf.animations.length) {
+        mixer = new THREE.AnimationMixer(gltf.scene);
+        acciones = gltf.animations.map((clip) => mixer.clipAction(clip));
+
+        // Activar la primera acción a pleno peso, el resto en espera (peso 0)
+        acciones.forEach((accion, i) => {
+          fijarPeso(accion, i === 0 ? 1 : 0);
+          accion.play();
+        });
+        accionActiva = acciones[0];
+
+        if (acciones.length > 1) crearSelectorAnimaciones(gltf.animations);
+      }
+    });
+
+    function fijarPeso(accion, peso) {
+      accion.enabled = true;
+      accion.setEffectiveTimeScale(1);
+      accion.setEffectiveWeight(peso);
+    }
+
+    function crossFade(destino, duracion = 0.5) {
+      if (destino === accionActiva) return;
+      fijarPeso(destino, 1);
+      destino.time = 0;
+      accionActiva.crossFadeTo(destino, duracion, true);
+      accionActiva = destino;
+    }
+
+    function crearSelectorAnimaciones(clips) {
+      const cont = document.createElement('div');
+      cont.style.position = 'absolute';
+      cont.style.bottom = '10px';
+      cont.style.left = '50%';
+      cont.style.transform = 'translateX(-50%)';
+      cont.style.display = 'flex';
+      cont.style.gap = '8px';
+      cont.style.zIndex = '5';
+
+      clips.forEach((clip, i) => {
+        const btn = document.createElement('button');
+        btn.textContent = clip.name;
+        btn.style.padding = '6px 12px';
+        btn.style.borderRadius = '20px';
+        btn.style.border = '1px solid var(--color-acento)';
+        btn.style.background = 'rgba(18,13,11,0.85)';
+        btn.style.color = 'var(--color-texto)';
+        btn.style.fontSize = '0.75rem';
+        btn.style.cursor = 'pointer';
+        btn.addEventListener('click', () => crossFade(acciones[i], 0.6));
+        cont.appendChild(btn);
+      });
+
+      visor.style.position = 'relative';
+      visor.appendChild(cont);
+    }
+
+    window.addEventListener('resize', () => {
+      const w = visor.clientWidth, h = visor.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    (function animar() {
+      requestAnimationFrame(animar);
+      controls.update();
+      if (mixer) mixer.update(reloj.getDelta());
+      renderer.render(scene, camera);
+    })();
+  }
+
+  // Audio
+  const audio = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
+  const bars = document.getElementById('bars');
+  const songName = document.getElementById('songName');
+  songName.textContent = cfg.audio_nombre || 'Música';
+
+  const fuenteAudio = cfg.audio_url || (cfg.audio_local ? `../public/audio/${cfg.audio_local}` : null);
+  if (fuenteAudio) {
+    audio.src = fuenteAudio;
+  }
+
+  let sonando = false;
+  playBtn.addEventListener('click', () => {
+    if (!fuenteAudio) return;
+    if (sonando) {
+      audio.pause();
+      playBtn.textContent = '▶';
+      bars.classList.add('paused');
+    } else {
+      audio.play().catch(() => {});
+      playBtn.textContent = '❙❙';
+      bars.classList.remove('paused');
+    }
+    sonando = !sonando;
+  });
+
+  // Llamas de fondo
+  const llamasEl = document.getElementById('llamas');
+  const coloresLlama = [cfg.colores.brasa, cfg.colores.primario, cfg.colores.acento];
+  for (let i = 0; i < 24; i++) {
+    const llama = document.createElement('div');
+    llama.className = 'llama';
+    const size = 30 + Math.random() * 60;
+    llama.style.width = `${size}px`;
+    llama.style.height = `${size * 1.4}px`;
+    llama.style.left = `${Math.random() * 100}%`;
+    llama.style.background = coloresLlama[i % coloresLlama.length];
+    llama.style.animationDuration = `${2.5 + Math.random() * 2.5}s`;
+    llama.style.animationDelay = `${Math.random() * 2}s`;
+    llamasEl.appendChild(llama);
+  }
+
+  // Loading screen
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('loading').classList.add('hidden');
+    }, 800);
+  });
+})();
+</script>
+</body>
+</html>
