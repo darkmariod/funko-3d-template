@@ -1,0 +1,161 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primario: #C0202A;
+  --acento: #D4960A;
+  --fondo: #120D0B;
+  --texto: #F4E9DC;
+  --brasa: #FF6A1A;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+header {
+  position: fixed;
+  top: 0;
+  inset-inline: 0;
+  z-index: 10;
+  padding: 0.75rem 2rem;
+  background: linear-gradient(180deg, rgba(18,13,11,.95) 60%, transparent);
+}
+
+.coleccion {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--acento);
+  opacity: 0.9;
+}
+
+.hero {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.modelo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.modelo iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.hero-info {
+  position: relative;
+  z-index: 1;
+  padding: 3rem 2rem;
+  background: linear-gradient(0deg, rgba(18,13,11,1) 0%, rgba(18,13,11,0) 100%);
+  width: 100%;
+}
+
+.hero-info h1 {
+  font-size: clamp(2rem, 6vw, 4.5rem);
+  font-weight: 800;
+  color: var(--texto);
+  line-height: 1.1;
+}
+
+.hero-info h2 {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 400;
+  color: var(--acento);
+  margin-top: 0.5rem;
+}
+
+.hero-info .marca {
+  font-size: 0.85rem;
+  color: var(--brasa);
+  margin-top: 0.75rem;
+  opacity: 0.8;
+}
+
+.historia {
+  padding: 4rem 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.historia-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.historia-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--acento);
+}
+
+.historia-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--acento);
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.historia-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+  color: var(--primario);
+}
+
+.historia-card p {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  line-height: 1.7;
+}
+
+.ficha {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.ficha-lista {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.ficha-lista dt {
+  font-weight: 600;
+  color: var(--acento);
+  white-space: nowrap;
+}
+
+.ficha-lista dd {
+  opacity: 0.85;
+}
+
+footer {
+  text-align: center;
+  padding: 3rem 2rem;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
