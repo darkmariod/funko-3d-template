@@ -299,7 +299,7 @@
     `${cfg.personaje.slice(0,mitad)}<span>${cfg.personaje.slice(mitad)}</span>`;
   document.getElementById('subtitulo').textContent = cfg.subtitulo;
   document.getElementById('firma').textContent = cfg.footer;
-  document.getElementById('btnExperiencia').href = '../experience/index.html';
+  document.getElementById('btnExperiencia').href = '/experience';
 
   const fichaMini = document.getElementById('fichaMini');
   (cfg.ficha || []).slice(0,3).forEach(f => {
