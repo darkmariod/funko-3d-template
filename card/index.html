@@ -310,7 +310,7 @@
 
   // Partículas de brasa siempre activas
   const ph = document.getElementById('placeholder3d');
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 14; i++) {
     const b = document.createElement('div');
     b.className = 'brasa';
     b.style.left = `${Math.random() * 100}%`;
@@ -320,11 +320,31 @@
     ph.appendChild(b);
   }
 
+  function mostrarFallback() {
+    const loading = document.getElementById('loadingModelo');
+    if (loading) loading.style.display = 'none';
+    // Mostrar emblema central si el modelo no cargó
+    const emblema = document.createElement('div');
+    emblema.style.cssText = `
+      position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:8px; z-index:1;
+    `;
+    emblema.innerHTML = `
+      <div style="font-size:70px;line-height:1;filter:drop-shadow(0 0 20px #C0202A);">😈</div>
+      <div style="font-family:'Cinzel Decorative',serif;font-size:0.7rem;color:#D4960A;letter-spacing:0.15em;text-align:center;">DIABLO DE LATA</div>
+    `;
+    ph.appendChild(emblema);
+  }
+
+  // Timeout de seguridad: si en 10s no carga, mostrar fallback
+  const timeoutFallback = setTimeout(mostrarFallback, 10000);
+
   // Mini visor 3D dentro de la tarjeta (si hay glb)
   if (cfg.modo_3d === 'glb' && cfg.modelo_glb) {
     cargarMiniVisor();
   } else {
-    document.getElementById('loadingModelo').style.display = 'none';
+    clearTimeout(timeoutFallback);
+    mostrarFallback();
   }
 
   function cargarMiniVisor() {
@@ -392,7 +412,8 @@
       modelo.traverse(o => { if (o.isMesh) o.material = mat; });
       scene.add(modelo);
 
-      // Ocultar spinner, mostrar canvas
+      // Modelo cargado — limpiar timeout y mostrar canvas
+      clearTimeout(timeoutFallback);
       document.getElementById('loadingModelo').style.display = 'none';
       canvas.style.opacity = '1';
 
@@ -404,8 +425,8 @@
         renderer.render(scene, camera);
       })();
     }, undefined, () => {
-      // Error cargando — ocultar spinner igual
-      document.getElementById('loadingModelo').style.display = 'none';
+      clearTimeout(timeoutFallback);
+      mostrarFallback();
     });
   }
 
