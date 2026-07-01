@@ -71,11 +71,39 @@
     display: block;
   }
   .personaje-img.placeholder {
-    background: linear-gradient(180deg, #2d1210 0%, #1a0d0b 100%);
+    background: radial-gradient(ellipse at 50% 30%, #3d1008 0%, #1a0d0b 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     height: 260px;
+    position: relative;
+  }
+
+  .cargando-modelo {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: radial-gradient(ellipse at 50% 30%, #3d1008 0%, #1a0d0b 100%);
+    z-index: 2;
+  }
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(212,150,10,0.2);
+    border-top-color: #D4960A;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .cargando-modelo span {
+    font-size: 0.65rem;
+    color: rgba(212,150,10,0.6);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   /* Degradado fusión */
@@ -204,7 +232,11 @@
     <div class="cara-frente">
       <img class="personaje-img" id="imgPersonaje" src="" alt="" style="display:none;">
       <div class="personaje-img placeholder" id="placeholder3d">
-        <canvas id="canvas3d" style="width:100%;height:100%;"></canvas>
+        <div class="cargando-modelo" id="loadingModelo">
+          <div class="spinner"></div>
+          <span>Cargando figura...</span>
+        </div>
+        <canvas id="canvas3d" style="width:100%;height:100%;opacity:0;transition:opacity 0.8s;"></canvas>
       </div>
       <div class="fade-img"></div>
       <div class="info">
@@ -288,32 +320,52 @@
     luz2.position.set(-2, 1, -2);
     scene.add(luz2);
 
+    // Luces dramáticas con colores del personaje
+    const luzRoja = new THREE.PointLight(0xC0202A, 2.0, 10);
+    luzRoja.position.set(-2, 1, 2);
+    scene.add(luzRoja);
+    const luzDorada = new THREE.PointLight(0xD4960A, 1.5, 10);
+    luzDorada.position.set(2, 3, 2);
+    scene.add(luzDorada);
+    const luzBrasa = new THREE.PointLight(0xFF6A1A, 1.0, 8);
+    luzBrasa.position.set(0, -2, 3);
+    scene.add(luzBrasa);
+
     const loader = new THREE.GLTFLoader();
     loader.load(`../public/${cfg.modelo_glb}`, (gltf) => {
       const modelo = gltf.scene;
       const box = new THREE.Box3().setFromObject(modelo);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
-      const escala = 2.0 / Math.max(size.x, size.y, size.z);
+      const escala = 2.2 / Math.max(size.x, size.y, size.z);
       modelo.scale.setScalar(escala);
       modelo.rotation.x = -Math.PI / 2;
       modelo.position.sub(center.multiplyScalar(escala));
-      modelo.position.y -= size.y * escala * 0.2;
+      modelo.position.y -= size.y * escala * 0.1;
 
       const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(cfg.colores.texto),
-        roughness: 0.6,
-        metalness: 0.05
+        color: new THREE.Color('#d4c8b8'),
+        roughness: 0.4,
+        metalness: 0.3,
+        envMapIntensity: 1.0
       });
       modelo.traverse(o => { if (o.isMesh) o.material = mat; });
       scene.add(modelo);
 
-      const reloj = new THREE.Clock();
+      // Ocultar spinner, mostrar canvas
+      document.getElementById('loadingModelo').style.display = 'none';
+      canvas.style.opacity = '1';
+
       (function animar() {
         requestAnimationFrame(animar);
-        modelo.rotation.z += 0.003;
+        modelo.rotation.z += 0.004;
+        // Luz roja pulsa suavemente
+        luzRoja.intensity = 1.8 + Math.sin(Date.now() * 0.002) * 0.4;
         renderer.render(scene, camera);
       })();
+    }, undefined, () => {
+      // Error cargando — ocultar spinner igual
+      document.getElementById('loadingModelo').style.display = 'none';
     });
   }
 
